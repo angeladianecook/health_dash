@@ -8,6 +8,7 @@
 # ---- Libraries -------------------------------------------------------------
 
 library(shiny)
+library(bslib)      # modern Bootstrap 5 theming, cards, layouts
 library(survival)   # nafld1, rats datasets + Surv()/survfit()
 library(survminer)  # ggsurvplot()
 library(dplyr)      # data wrangling
@@ -15,13 +16,55 @@ library(table1)     # table1() demographic tables
 library(ggplot2)    # plotting (also pulled in by survminer)
 library(ggalluvial) # alluvial / Sankey-style diagrams
 
+# ---- Look & feel -----------------------------------------------------------
+
+# A cohesive, professional colour palette reused across the whole app.
+palette_primary   <- "#2c5f8a"  # muted slate blue
+palette_accent    <- "#d1495b"  # warm red for contrast
+palette_navbar_bg <- "#1c2733"  # dark slate for the navbar
+palette_muted     <- "#b0b7be"  # neutral grey
+
+# Drug colours for the alluvial diagram (curated rather than a stock palette).
+drug_palette <- c(
+  Escitalopram = "#1f4e79",
+  Citalopram   = "#2e75b6",
+  Sertraline   = "#2e9e8f",
+  Fluvoxamine  = "#e0a458",
+  Missing      = palette_muted
+)
+
+# Bootstrap 5 theme: clean system font stack, consistent brand colours.
+app_theme <- bs_theme(
+  version    = 5,
+  bg         = "#ffffff",
+  fg         = "#1c2733",
+  primary    = palette_primary,
+  secondary  = "#5a7184",
+  base_font  = font_collection("system-ui", "Segoe UI",
+                               "Helvetica Neue", "Arial", "sans-serif"),
+  heading_font = font_collection("system-ui", "Segoe UI",
+                                 "Helvetica Neue", "Arial", "sans-serif"),
+  "border-radius" = "0.5rem"
+)
+
+# A single ggplot theme so every figure shares the same typography & spacing.
+app_ggtheme <- theme_minimal(base_size = 13) +
+  theme(
+    plot.title    = element_text(face = "bold", size = 15,
+                                 margin = margin(b = 8)),
+    plot.subtitle = element_text(colour = "#5a7184", size = 11,
+                                 margin = margin(b = 10)),
+    axis.title    = element_text(colour = "#3a4a59"),
+    legend.position = "bottom",
+    legend.title  = element_text(face = "bold"),
+    panel.grid.minor = element_blank()
+  )
+theme_set(app_ggtheme)
+
 # ---- Data ------------------------------------------------------------------
 
 data("nafld1")
 data("rats")
-
-# A consistent theme for every ggplot in the app.
-theme_set(theme_minimal(base_size = 13))
 
 # NAFLD cohort: derive human-readable labels once, up front.
 nafld_clean <- nafld1 %>%
@@ -55,51 +98,93 @@ switching <- data.frame(
 
 # ---- UI --------------------------------------------------------------------
 
-ui <- fluidPage(
-  titlePanel("Health Dashboard Examples"),
+ui <- page_navbar(
+  title       = "Health Analytics Dashboard",
+  window_title = "Health Analytics Dashboard",
+  theme       = app_theme,
+  bg          = palette_navbar_bg,
+  underline   = TRUE,
 
-  navlistPanel(
-    widths = c(3, 9),
-
-    "Table 1",
-    tabPanel(
-      "NAFLD",
-      tags$h4("Table 1: Demographic Information for NAFLD Cohort"),
-      htmlOutput("table"),
-      tags$h6("Data from a population study of non-alcoholic fatty liver
-              disease (NAFLD). Subjects with the condition and a set of
-              matched control subjects were followed forward for metabolic
-              conditions, cardiac endpoints, and death. Source: Allen 2018.")
-    ),
-
-    "Survival Curves",
-    tabPanel(
-      "Tumors in Rats",
-      tags$h4("Survival Analysis: Tumor Incidence in Treated and Untreated Rats"),
-      selectInput(
-        inputId = "groupselector",
-        label   = "Treatment Group",
-        choices = c("No Treatment" = "0", "Treatment" = "1")
+  # 1. Demographics ---------------------------------------------------------
+  nav_panel(
+    title = "Demographics",
+    icon  = icon("table"),
+    card(
+      card_header(
+        "Table 1 — Demographic summary, NAFLD cohort",
+        class = "fw-semibold"
       ),
-      plotOutput("p1", height = "520px"),
-      tags$h6("Rat treatment data from Mantel et al. Three rats were chosen
-              from each of 100 litters, one of which was treated with a drug,
-              and then all followed for tumor incidence. Source: N. Mantel,
-              N. R. Bohidar and J. L. Ciminera. Mantel-Haenszel analyses of
-              litter-matched time to response data, with modifications for
-              recovery of interlitter information. Cancer Research,
-              37:3863-3868, 1977.")
-    ),
-
-    "Treatment Switching",
-    tabPanel(
-      "Depression Treatment Sankey",
-      tags$h4("Example Sankey Diagram for Treatment Switching"),
-      plotOutput("p2", height = "520px"),
-      tags$h6("The data in this example was fabricated for illustration
-              purposes. This diagram was generated using the ggalluvial
-              package: http://corybrunson.github.io/ggalluvial/")
+      card_body(
+        div(class = "table-responsive", htmlOutput("table"))
+      ),
+      card_footer(
+        class = "text-muted small",
+        "Population study of non-alcoholic fatty liver disease (NAFLD). ",
+        "Subjects with the condition and matched controls were followed ",
+        "forward for metabolic conditions, cardiac endpoints, and death. ",
+        tags$em("Source: Allen, 2018.")
+      )
     )
+  ),
+
+  # 2. Survival curves ------------------------------------------------------
+  nav_panel(
+    title = "Survival Curves",
+    icon  = icon("chart-line"),
+    layout_sidebar(
+      sidebar = sidebar(
+        title = "Controls",
+        selectInput(
+          inputId = "groupselector",
+          label   = "Treatment group",
+          choices = c("No Treatment" = "0", "Treatment" = "1")
+        ),
+        helpText(
+          "Kaplan-Meier tumour-free survival, split by sex, re-fit for the ",
+          "selected treatment group."
+        )
+      ),
+      card(
+        card_header(
+          "Survival analysis — tumour incidence in rats",
+          class = "fw-semibold"
+        ),
+        card_body(plotOutput("p1", height = "520px")),
+        card_footer(
+          class = "text-muted small",
+          "Three rats were chosen from each of 100 litters, one treated ",
+          "with a drug, then all followed for tumour incidence. ",
+          tags$em("Source: Mantel, Bohidar & Ciminera, Cancer Research, ",
+                  "37:3863-3868, 1977.")
+        )
+      )
+    )
+  ),
+
+  # 3. Treatment switching --------------------------------------------------
+  nav_panel(
+    title = "Treatment Switching",
+    icon  = icon("shuffle"),
+    card(
+      card_header(
+        "Treatment switching — antidepressant medications",
+        class = "fw-semibold"
+      ),
+      card_body(plotOutput("p2", height = "520px")),
+      card_footer(
+        class = "text-muted small",
+        "Illustrative Sankey / alluvial diagram built with the ",
+        tags$a(href = "http://corybrunson.github.io/ggalluvial/",
+               target = "_blank", "ggalluvial"),
+        " package. ", tags$em("Data fabricated for demonstration only.")
+      )
+    )
+  ),
+
+  nav_spacer(),
+  nav_item(
+    tags$span(class = "navbar-text small text-light opacity-75",
+              "Epidemiology & clinical-research examples")
   )
 )
 
@@ -122,14 +207,17 @@ server <- function(input, output) {
       pval        = TRUE,
       conf.int    = TRUE,
       risk.table  = TRUE,
-      palette     = c("#E64B35", "#4DBBD5"),
+      palette     = c(palette_accent, palette_primary),
       xlim        = c(0, max(dat$time) + 1),
-      title       = paste("Survival Plot:", group_label),
-      xlab        = "Time (Days)",
-      ylab        = "Tumor-free Probability",
+      title       = paste("Tumour-free survival —", group_label),
+      subtitle    = "Kaplan-Meier estimate with 95% confidence intervals",
+      xlab        = "Time (days)",
+      ylab        = "Tumour-free probability",
       legend.labs = c("Female", "Male"),
       legend.title = "Sex",
-      ggtheme     = theme_minimal(base_size = 13)
+      risk.table.height = 0.25,
+      ggtheme     = app_ggtheme,
+      tables.theme = theme_cleantable()
     )
   })
 
@@ -143,14 +231,14 @@ server <- function(input, output) {
     ggplot(switching,
            aes(x = month, stratum = Drug, alluvium = patient,
                fill = Drug, label = Drug)) +
-      scale_fill_brewer(type = "qual", palette = "Set3") +
+      scale_fill_manual(values = drug_palette) +
       geom_flow(stat = "alluvium", lode.guidance = "rightleft",
-                color = "darkgray", alpha = 0.7) +
-      geom_stratum(alpha = 0.9) +
-      labs(x = "Months", y = "Number of Patients",
-           title = "Treatment Switching Patterns over 24 Months",
-           fill = "Drug") +
-      theme(legend.position = "bottom")
+                color = "white", linewidth = 0.2, alpha = 0.75) +
+      geom_stratum(alpha = 0.95, color = "white", linewidth = 0.3) +
+      labs(x = "Months", y = "Number of patients",
+           title = "Treatment switching patterns over 24 months",
+           subtitle = "Antidepressant medication by visit (fabricated data)",
+           fill = "Drug")
   })
 }
 

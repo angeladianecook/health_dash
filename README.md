@@ -27,6 +27,7 @@ commonly used in epidemiology and clinical research:
   | Package      | Purpose                                  |
   | ------------ | ---------------------------------------- |
   | `shiny`      | Web application framework                |
+  | `bslib`      | Bootstrap 5 theming, cards & layouts     |
   | `survival`   | `nafld1` / `rats` datasets, survival fit |
   | `survminer`  | `ggsurvplot()` survival curves           |
   | `dplyr`      | Data wrangling                           |
@@ -40,7 +41,7 @@ Install the required packages from an R console:
 
 ```r
 install.packages(c(
-  "shiny", "survival", "survminer",
+  "shiny", "bslib", "survival", "survminer",
   "dplyr", "table1", "ggplot2", "ggalluvial"
 ))
 ```
@@ -59,9 +60,9 @@ Or from the command line:
 Rscript -e 'shiny::runApp("health_dash", launch.browser = TRUE)'
 ```
 
-The app opens in your browser. Use the left-hand navigation list to switch
-between the three figures; on the survival tab, the **Treatment Group**
-dropdown re-fits the curves for the selected group.
+The app opens in your browser. Use the top navigation bar to switch between
+the three figures; on the survival tab, the **Treatment group** dropdown in
+the sidebar re-fits the curves for the selected group.
 
 ## Project layout
 
