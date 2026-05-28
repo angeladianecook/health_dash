@@ -19,9 +19,6 @@ commonly used in epidemiology and clinical research:
 
 ![Health Dashboard screenshot](docs/screenshot.png)
 
-> _Placeholder._ To add a real screenshot, run the app (see below), take a
-> capture of the browser window, and save it to `docs/screenshot.png`.
-
 ## Requirements
 
 - **R** 4.0 or newer ([download](https://cran.r-project.org/))
