@@ -213,6 +213,9 @@ server <- function(input, output) {
       risk.table  = TRUE,
       palette     = c(palette_accent, palette_primary),
       xlim        = c(0, max(dat$time) + 1),
+      # Share one set of time breaks so the "number at risk" counts line up
+      # exactly under the matching x-axis ticks on the curve above.
+      break.time.by = 25,
       title       = paste("Tumour-free survival —", group_label),
       subtitle    = "Kaplan-Meier estimate with 95% confidence intervals",
       xlab        = "Time (days)",
