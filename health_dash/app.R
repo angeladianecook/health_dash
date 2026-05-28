@@ -48,15 +48,19 @@ app_theme <- bs_theme(
 )
 
 # A single ggplot theme so every figure shares the same typography & spacing.
-app_ggtheme <- theme_minimal(base_size = 13) +
+# Base size is generous because the plots render across a wide canvas, where
+# smaller fonts look cramped.
+app_ggtheme <- theme_minimal(base_size = 16) +
   theme(
-    plot.title    = element_text(face = "bold", size = 15,
+    plot.title    = element_text(face = "bold", size = 19,
                                  margin = margin(b = 8)),
-    plot.subtitle = element_text(colour = "#5a7184", size = 11,
-                                 margin = margin(b = 10)),
-    axis.title    = element_text(colour = "#3a4a59"),
+    plot.subtitle = element_text(colour = "#5a7184", size = 14,
+                                 margin = margin(b = 12)),
+    axis.title    = element_text(colour = "#3a4a59", size = 15),
+    axis.text     = element_text(size = 13),
     legend.position = "bottom",
-    legend.title  = element_text(face = "bold"),
+    legend.title  = element_text(face = "bold", size = 14),
+    legend.text   = element_text(size = 13),
     panel.grid.minor = element_blank()
   )
 theme_set(app_ggtheme)
@@ -215,9 +219,13 @@ server <- function(input, output) {
       ylab        = "Tumour-free probability",
       legend.labs = c("Female", "Male"),
       legend.title = "Sex",
+      pval.size   = 6,
+      fontsize    = 4.5,
       risk.table.height = 0.25,
+      risk.table.fontsize = 4.5,
+      risk.table.title = "Number at risk",
       ggtheme     = app_ggtheme,
-      tables.theme = theme_cleantable()
+      tables.theme = theme_cleantable(base_size = 14)
     )
   })
 
